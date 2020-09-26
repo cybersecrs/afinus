@@ -92,7 +92,7 @@ Default use case is as follows:
  3. Clean all files in directory
  4. Countinue recursive if started with *--rec*
 
-```
+```ruby
 
 # 'AFI.execute!' - define start-folder and reursive option 
 
@@ -131,7 +131,7 @@ Default use case is as follows:
 
 **File counters are initialized with new object**
 
-```
+```ruby
   def initialize
 
     @c_file     =     File counter
@@ -149,22 +149,22 @@ Default use case is as follows:
 
 **Work with script**
 
-```
-`  ruby afinus.rb  `                        -    Clean working directory
-`  ruby afinus.rb --rec  `                  -    Clean recursively from working dir
-`  ruby afinus.rb /home/username  `         -    Clean files in /home/username directory
-`  ruby afinus.rb /home/username --rec  `   -    Clean files recursively from /home/username directory
+```ruby
+`  ruby afinus.rb  `                      -  Clean working directory
+`  ruby afinus.rb --rec  `                -  Clean recursively from working dir
+`  ruby afinus.rb /home/username  `       -  Clean files in /home/username directory
+`  ruby afinus.rb /home/username --rec  ` -  Clean files recursively from /home/username directory
 ```
 
 **Use it as a GEM**
 
-```
-`  AFI.new.enter("/root")  `                -    Enter directory *(start-folder)*
-`  AFI.new.fill_empty_space!(512000)  `     -    Fill empty partition space with 512K *random-byte-files*
-`  AFI.new.clean!("fill_empty")  `          -    Clean newly created *random-byte-files*
-`  AFI.new.clean!("")  `                    -    Clean all files in folder
-`  AFI.new.clean!("recursive")  `           -    Clean working folder recursively
-`  AFI.new.execute!("/root", "--rec")  `    -    Enter root, fill empty space, then clean recursively
+```ruby
+`  AFI.new.enter("/root")  `              -  Enter directory *(start-folder)*
+`  AFI.new.fill_empty_space!(512000)  `   -  Fill empty partition space with 512K *random-byte-files*
+`  AFI.new.clean!("fill_empty")  `        -  Clean newly created *random-byte-files*
+`  AFI.new.clean!("")  `                  -  Clean all files in folder
+`  AFI.new.clean!("recursive")  `         -  Clean working folder recursively
+`  AFI.new.execute!("/root", "--rec")  `  -  Enter root, fill empty space, then clean recursively
 ```
 ---
 
@@ -172,7 +172,7 @@ Default use case is as follows:
 
 **Clean partition empty space**
 
-```
+```ruby
  require 'afinus'
 
    afinus = AFI.new
@@ -183,7 +183,7 @@ Default use case is as follows:
 
 **Clean partition empty space and all files in folder**
 
-```
+```ruby
  require 'afinus'
 
    afinus = AFI.new
@@ -198,7 +198,7 @@ Default use case is as follows:
 
 **Combine methods for more paranoid clean, or edit 'rewrite(file)' as u need it**
 
-```
+```ruby
 [1] - fill empty and overwrite folder files 3 times
 
    afinus = AFI.new
