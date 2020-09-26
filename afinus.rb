@@ -1,0 +1,230 @@
+#!/usr/bin/env ruby
+
+#================================================================================#
+#                  Anti-Forensic-Investigation Null Script                       #
+#--------------------------------------------------------------------------------#
+#                                                                                #
+#   ***********************                                                      #
+#   *                     *                                                      #
+#   *  [AFI] Null Script  *  by Linuxander                                       #
+#   *                     *                                                      #
+#   ***********************                                                      #
+#                                                                                #
+#  ============================================================================  #
+#      Version: [1.4]                                                            #
+#  ============================================================================  #
+#                                                                                #
+#       Author: Linuxander                                                       #
+#                                                                                #
+#  Description: Take first argument as start folder, loop inside to overwrite    #
+#               each file with 50 random bytes, then truncate all to zero.       #
+#               If no arguments are given, default is working dir.               #
+#                                                                                #
+#               + added option to fill empty space with random-byte files        #   
+#               + added option for recursive loop with --rec as argument         #
+#               + added color output                                             #
+#                                                                                #
+#         Note: Author is NOT responsible for any damage caused by AFINUS!       #
+#               Always backup your files before use! Test in Virtual Machine!    #
+#                                                                                #
+#      ====================================================================      #
+#                      HAPPY HACKING & DON'T KEEP LOGS !!!                       #
+#      ====================================================================      #
+#                                                                                #
+##################################################################################
+
+
+require 'colorize'
+
+
+class AFI
+
+
+#  Start counters
+
+  def initialize
+    @c_file = 0
+    @c_dir  = 0
+    @c_err  = 0
+    @c_byte = 0
+    @dirs   = []
+  end
+
+
+#  Print file counter and time info
+
+  def print_info
+    print "\n [#{@c_file}] files cleaned in [#{(@end_time - @start_time).round(3)}] seconds".white
+    print "\n==========================================================================\n".white
+  end
+
+
+#  Print "thank you" note
+
+  def print_thank_you
+    print "\n Thank's for using AFI Null Script! Stay with TAILS to protect your privacy!\n".yellow.bold
+  end
+
+
+#  Enter start directory or exit
+
+  def enter(dir)
+    begin
+      Dir.chdir(dir)
+      working_dir
+    rescue
+      puts ""
+      puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<".red.bold
+      puts ""
+      exit(1)
+    end
+  end   # end of enter(dir)
+
+
+#  Print working directory
+
+  def working_dir
+    puts ""
+    print "============================================================\n".yellow
+    print " You are in".green
+    print " #{Dir.pwd}\n".white.bold
+    print "============================================================\n".yellow
+    puts ""
+  end
+
+
+#  Define printer for processed files
+
+  def printer(counter, name, note)
+    print "[#{counter}] - "
+    print "#{name}"
+    print " - #{note}"
+  end
+
+
+#  Create random-byte file
+
+  def random_bytes(bytes)
+    while true do
+      random = Random.new(192853718475125)
+      a_rand = "#{rand(99999999999999999)}.fillfile"
+      @c_byte += 1
+      File.write("#{a_rand}", "#{Random.new.bytes(bytes)}")
+      printer("#{@c_byte}".yellow.bold, "Created #{a_rand}".white, "#{bytes} bytes\n".white)
+    end
+  end       # end of random_bytes
+
+
+#  Fill empty space on partition
+
+  def fill_empty_space!(bytes)
+
+    begin
+      @start_time = Time.now
+      random_bytes(bytes)
+    rescue
+      @end_time = Time.now
+      print "\n [#{@c_byte}] files created in [#{(@end_time - @start_time).round(3)}] seconds".white
+      print "\n==========================================================================\n\n".white
+    end
+
+  end       # end of fill_empty_space!
+
+
+#  Collect files to clean
+
+  def collect(option)
+    if option == "recursive"
+      Dir.glob(File.join("**", "*"))
+    elsif option == "fill_empty"
+      Dir.glob("*.fillfile")
+    else
+      Dir.glob("*")
+    end
+  end     # end of collect
+
+
+#  Overwrite and Null file
+
+  def rewrite(file)
+   begin
+    File.write("#{file}", "#{Random.new.bytes(50)}")
+    File.truncate("#{file}", 0)
+    @c_file += 1
+    printer("#{@c_file}".yellow, "#{file}".white, "Overwritten and Nulled!\n".yellow)
+   rescue
+    @c_err += 1
+    printer("#{@c_err}".red, "#{file}".white.bold, "NOT PROCESSED => PERMISSION PROBLEM?\n".red.bold)
+   end
+  end     # end of rewrite
+
+
+#  Clean all files!
+
+  def clean!(option)
+
+   collect(option).each {  |file|
+   unless File.directory?(file) || File.symlink?(file)
+
+   begin
+     if File.zero?(file)
+       puts " #{file} is Null-Byte ... skipped!".red
+     else
+       rewrite("#{file}") if File.writable?("#{file}")
+     end
+   rescue
+      puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
+   end 
+   else
+      @c_dir += 1
+      printer("#{@c_dir}".yellow.bold, "#{file}", "Directory Found!\n".white)
+      @dirs << "#{file}"
+   end }
+
+   print "\n [#{@c_dir}] directories counted".white
+
+  end       # end of clean!
+
+
+#  Enter "start-folder" as first argumet. If no arg is given, "start-folder" is working dir
+#  Add "--rec" argument for recursive clean. In use with "start-folder", "--rec" must be second argument
+
+  def execute!(directory, opt)
+
+   @start_time = Time.now
+
+    ARGV[1] = "--rec" if opt == "--rec"
+
+    if ARGV.empty? or ARGV[0] == "--rec"
+      directory = Dir.pwd
+    else
+      directory = ARGV[0]
+    end
+
+    if ARGV[0] == "--rec" || ARGV[1] == "--rec"
+      enter(directory)
+      fill_empty_space!(512000)       # Fill empty space before recursive clean!
+      clean!("recursive")
+    else
+      enter(directory)
+      fill_empty_space!(512000)           # Fill empty space before clean!
+      clean!("")
+    end
+
+   @end_time = Time.now
+
+    print_info
+    print_thank_you
+  end
+
+end # END OF CLASS
+
+
+#  SCRIPT EXECUTION
+
+  AFI.new.execute!("#{Dir.pwd}", "")
+  
+
+
+
+
