@@ -6,12 +6,12 @@
 #                                                                                #
 #   ***********************                                                      #
 #   *                     *                                                      #
-#   *  [AFI] Null Script  *  by Linuxander                                       #
+#   *  [AFI] Null Script  *  by Cybersec-RS                                      #
 #   *                     *                                                      #
 #   ***********************                                                      #
 #                                                                                #
 #  ============================================================================  #
-#      Version: [1.4]                                                            #
+#      Version: [1.5]   -   https://www.cybersecrs.github.io/afinus              #
 #  ============================================================================  #
 #                                                                                #
 #       Author: Linuxander                                                       #
@@ -23,6 +23,8 @@
 #               + added option to fill empty space with random-byte files        #   
 #               + added option for recursive loop with --rec as argument         #
 #               + added color output                                             #
+#               + added option to remove remove file after clean                 #
+#               + added 'remove_directories' after clean                         #
 #                                                                                #
 #         Note: Author is NOT responsible for any damage caused by AFINUS!       #
 #               Always backup your files before use! Test in Virtual Machine!    #
@@ -112,13 +114,12 @@ class AFI
       File.write("#{a_rand}", "#{Random.new.bytes(bytes)}")
       printer("#{@c_byte}".yellow.bold, "Created #{a_rand}".white, "#{bytes} bytes\n".white)
     end
-  end       # end of random_bytes
+  end       # end of create_random_bytes
 
 
 #  Fill empty space on partition
 
   def fill_empty_space!(bytes)
-
     begin
       @start_time = Time.now
       random_bytes(bytes)
@@ -127,7 +128,6 @@ class AFI
       print "\n [#{@c_byte}] files created in [#{(@end_time - @start_time).round(3)}] seconds".white
       print "\n==========================================================================\n\n".white
     end
-
   end       # end of fill_empty_space!
 
 
@@ -150,8 +150,13 @@ class AFI
    begin
     File.write("#{file}", "#{Random.new.bytes(50)}")
     File.truncate("#{file}", 0)
+    File.write("#{file}", "#{Random.new.bytes(100)}")
+    File.truncate("#{file}", 0)
+    File.write("#{file}", "#{Random.new.bytes(50)}")
+    File.truncate("#{file}", 0)
+    File.delete(file)
     @c_file += 1
-    printer("#{@c_file}".yellow, "#{file}".white, "Overwritten and Nulled!\n".yellow)
+    printer("#{@c_file}".yellow, "#{file}".white, "Overwritten, Nulled, Removed!\n".yellow)
    rescue
     @c_err += 1
     printer("#{@c_err}".red, "#{file}".white.bold, "NOT PROCESSED => PERMISSION PROBLEM?\n".red.bold)
@@ -159,27 +164,36 @@ class AFI
   end     # end of rewrite
 
 
+#  Remove Directories
+
+  def remove_directories!(option)
+    unless option == "recursive"
+      collect("").each { |dir| Dir.rmdir(dir) if File.direcory?(dir) }
+    else
+      collect("recursive").each { |dir| Dir.rmdir(dir) if File.direcory?(dir) }
+  end
+
+
 #  Clean all files!
 
   def clean!(option)
 
-   collect(option).each {  |file|
-   unless File.directory?(file) || File.symlink?(file)
-
-   begin
-     if File.zero?(file)
-       puts " #{file} is Null-Byte ... skipped!".red
-     else
-       rewrite("#{file}") if File.writable?("#{file}")
-     end
-   rescue
-      puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
-   end 
-   else
+   collect(option).each { |file|
+    unless File.directory?(file)
+      if File.zero?(file)
+        File.delete(file)
+      else    
+      begin
+        (rewrite(file); File.delete(file)) if File.writable?(file)
+      rescue
+        puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
+      end end 
+    else
       @c_dir += 1
       printer("#{@c_dir}".yellow.bold, "#{file}", "Directory Found!\n".white)
+      Dir.rmdir(file) if Dir.empty?(file)
       @dirs << "#{file}"
-   end }
+    end  }
 
    print "\n [#{@c_dir}] directories counted".white
 
@@ -191,7 +205,7 @@ class AFI
 
   def execute!(directory, opt)
 
-   @start_time = Time.now
+  @start_time = Time.now
 
     ARGV[1] = "--rec" if opt == "--rec"
 
@@ -205,13 +219,15 @@ class AFI
       enter(directory)
       fill_empty_space!(512000)       # Fill empty space before recursive clean!
       clean!("recursive")
+      remove_directories!("recursive")
     else
       enter(directory)
-      fill_empty_space!(512000)           # Fill empty space before clean!
+      fill_empty_space!(512000)           # Fill empty space before folder clean!
       clean!("")
+      remove_directories!("")
     end
 
-   @end_time = Time.now
+  @end_time = Time.now
 
     print_info
     print_thank_you
@@ -219,12 +235,12 @@ class AFI
 
 end # END OF CLASS
 
+#                              END OF DEFINITIONS                                #
+#================================================================================#
+
 
 #  SCRIPT EXECUTION
 
   AFI.new.execute!("#{Dir.pwd}", "")
   
-
-
-
 
