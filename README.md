@@ -5,12 +5,12 @@
 #                                                                                #
 #   ***********************                                                      #
 #   *                     *                                                      #
-#   *  [AFI] Null Script  *  by Linuxander                                       #
+#   *  [AFI] Null Script  *  by Cybersec-RS                                      #
 #   *                     *                                                      #
 #   ***********************                                                      #
 #                                                                                #
 #  ============================================================================  #
-#      Version: [1.4]                                                            #
+#      Version: [1.5]   -   https://www.cybersecrs.github.io/afinus              #
 #  ============================================================================  #
 #                                                                                #
 #       Author: Linuxander                                                       #
@@ -22,6 +22,8 @@
 #               + added option to fill empty space with random-byte files        #   
 #               + added option for recursive loop with --rec as argument         #
 #               + added color output                                             #
+#               + added option to remove remove file after clean                 #
+#               + added 'remove_directories' after clean                         #
 #                                                                                #
 #         Note: Author is NOT responsible for any damage caused by AFINUS!       #
 #               Always backup your files before use! Test in Virtual Machine!    #
@@ -56,7 +58,7 @@ ruby afinus.rb /home/username --rec
 
 *AFINUS* then collect all files and count directories. It will skip files
 with 0 byte, if no write permission, or if file is a symlink. Otherwise, it will
-overwrite file with 10 random bytes, then truncate all to 0, then remove it.
+overwrite file multiple times with 50 and 100 random bytes, truncate all to 0, then remove it.
 Filenames for new files are random INT, and file extension is *.fillfile*.
 This make it easy to fill empty space and remove only those files created by self.
 
@@ -87,10 +89,10 @@ You must have permission for *start-folder*, other errors are handled.
 Method 'execute!' is outside of other definitions, edit for your own use case.
 Default use case is as follows:
 
- 1. Enter start-folder *(working-dir)*
- 2. Fill empty space with random bytes (512000)
- 3. Clean all files in directory
- 4. Countinue recursive if started with *--rec*
+ 1. Enter start-folder *(working-dir)*  
+ 2. Fill empty space with random bytes (512000)  
+ 3. Clean all files in directory  
+ 4. Countinue recursive if started with *--rec*  
 
 ```ruby
 
