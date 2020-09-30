@@ -11,13 +11,13 @@
 #   ***********************                                                      #
 #                                                                                #
 #  ============================================================================  #
-#      Version: [1.5]   -   https://www.cybersecrs.github.io/afinus              #
+#      Version: [1.5]   -   https://www.github.com/cybersecrs/afinus             #
 #  ============================================================================  #
 #                                                                                #
 #       Author: Linuxander                                                       #
 #                                                                                #
 #  Description: Take first argument as start folder, loop inside to overwrite    #
-#               each file with 50 random bytes, then truncate all to zero.       #
+#               each file multiple times, truncate to zero and delete.           #
 #               If no arguments are given, default is working dir.               #
 #                                                                                #
 #               + added option to fill empty space with random-byte files        #   
@@ -180,14 +180,11 @@ class AFI
 
    collect(option).each { |file|
     unless File.directory?(file)
-      if File.zero?(file)
-        File.delete(file)
-      else    
       begin
-        (rewrite(file); File.delete(file)) if File.writable?(file)
+        rewrite(file) if File.writable?(file)
       rescue
         puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
-      end end 
+      end 
     else
       @c_dir += 1
       printer("#{@c_dir}".yellow.bold, "#{file}", "Directory Found!\n".white)
