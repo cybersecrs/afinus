@@ -10,13 +10,13 @@
 #   ***********************                                                      #
 #                                                                                #
 #  ============================================================================  #
-#      Version: [1.5]   -   https://cybersecrs.github.io/afinus                  #
+#      Version: [1.5]   -   https://www.github.com/cybersecrs/afinus             #
 #  ============================================================================  #
 #                                                                                #
 #       Author: Linuxander                                                       #
 #                                                                                #
 #  Description: Take first argument as start folder, loop inside to overwrite    #
-#               each file with 50 random bytes, then truncate all to zero.       #
+#               each file multiple times, truncate to zero and delete.           #
 #               If no arguments are given, default is working dir.               #
 #                                                                                #
 #               + added option to fill empty space with random-byte files        #   
@@ -56,43 +56,42 @@ If you use *recursive* and *start-folder* args, '--rec' go second.
 ruby afinus.rb /home/username --rec
 ```
 
-*AFINUS* then collect all files and count directories. It will skip files
-with 0 byte, if no write permission, or if file is a symlink. Otherwise, it will
-overwrite file multiple times with 50 and 100 random bytes, truncate all to 0, then remove it.
+*AFINUS* then collect all files and count directories, it will skip files if no write permission.
+It will overwrite file 6 times, with 50 and 100 random bytes and truncating all to 0 between it, then remove it.
 Filenames for new files are random INT, and file extension is *.fillfile*.
 This make it easy to fill empty space and remove only those files created by self.
 
 ```ruby
-  unless File.directory?(file) || File.symlink?(file)
+ def clean!(option)
 
-  begin
-
-    if File.zero?(file)
-      puts " #{file} is Null-Byte ... skipped!".red
+   collect(option).each { |file|
+    unless File.directory?(file)
+      begin
+        rewrite(file) if File.writable?(file)
+      rescue
+        puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
+      end 
     else
-      rewrite("#{file}") if File.writable?("#{file}")
-    end
+      @c_dir += 1
+      printer("#{@c_dir}".yellow.bold, "#{file}", "Directory Found!\n".white)
+      Dir.rmdir(file) if Dir.empty?(file)
+      @dirs << "#{file}"
+    end  }
 
-  rescue
-      puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
+   print "\n [#{@c_dir}] directories counted".white
+
   end
-
-  else
-     @c_dir += 1
-     print_lines("#{@c_dir}".yellow.bold, "#{file}", "Directory Found!\n".white)
-     @dirs << "#{file}"
-  end
-
 ```
 
-You must have permission for *start-folder*, other errors are handled.
-Method 'execute!' is outside of other definitions, edit for your own use case.
+You must have permission for *start-folder*, or Afinus will exit.
+Method 'execute!' is outside of other definitions, edit for your own use case if you use it as a gem.
 Default use case is as follows:
 
  1. Enter start-folder *(working-dir)*  
  2. Fill empty space with random bytes (512000)  
- 3. Clean all files in directory  
- 4. Countinue recursive if started with *--rec*  
+ 3. Overwrite with 50 rand bytes, then 0, then 100, again 0, 50 rand bytes, 0, remove file.  
+ 4. Countinue recursive if started with *--rec*
+ 5. Delete all directories at the end
 
 ```ruby
 
@@ -101,11 +100,13 @@ Default use case is as follows:
 
   def execute!(directory, opt)
 
-   @start_time = Time.now
+  def execute!(directory, opt)
+
+  @start_time = Time.now
 
     ARGV[1] = "--rec" if opt == "--rec"
 
-    if (ARGV.empty? or ARGV[0] == "--rec")
+    if ARGV.empty? or ARGV[0] == "--rec"
       directory = Dir.pwd
     else
       directory = ARGV[0]
@@ -113,22 +114,21 @@ Default use case is as follows:
 
     if ARGV[0] == "--rec" || ARGV[1] == "--rec"
       enter(directory)
-      fill_empty_space!(512000)       # Remove this line to not clean empty space before recursive clean
+      fill_empty_space!(512000)       # Fill empty space before recursive clean!
       clean!("recursive")
-      # add methods to repeat cleaning files (paranoid)
+      remove_directories!("recursive")
     else
       enter(directory)
-      fill_empty_space!(512000)           # Remove this line to not clean empty space before clean
+      fill_empty_space!(512000)
       clean!("")
-      # add methods to repeat cleaning files (paranoid)
+      remove_directories!("")
     end
 
-   @end_time = Time.now
+  @end_time = Time.now
 
     print_info
     print_thank_you
   end
-
 ```
 
 **File counters are initialized with new object**
@@ -161,9 +161,9 @@ Default use case is as follows:
 **Use it as a GEM**
 
 ```ruby
-`  AFI.new.enter("/root")  `              -  Enter directory *(start-folder)*
-`  AFI.new.fill_empty_space!(512000)  `   -  Fill empty partition space with 512K *random-byte-files*
-`  AFI.new.clean!("fill_empty")  `        -  Clean newly created *random-byte-files*
+`  AFI.new.enter("/root")  `              -  Enter directory (start-folder)
+`  AFI.new.fill_empty_space!(512000)  `   -  Fill empty partition space with 512K random-byte-files
+`  AFI.new.clean!("fill_empty")  `        -  Clean newly created random-byte-files
 `  AFI.new.clean!("")  `                  -  Clean all files in folder
 `  AFI.new.clean!("recursive")  `         -  Clean working folder recursively
 `  AFI.new.execute!("/root", "--rec")  `  -  Enter root, fill empty space, then clean recursively
@@ -201,7 +201,7 @@ Default use case is as follows:
 **Combine methods for more paranoid clean, or edit 'rewrite(file)' as u need it**
 
 ```ruby
-[1] - fill empty and overwrite folder files 3 times
+[1] - fill empty and overwrite folder files with 3 more circles
 
    afinus = AFI.new
    afinus.enter("/home/linuxander")
@@ -209,7 +209,7 @@ Default use case is as follows:
    3.times do afinus.clean!("") end
 
 
-[2] - 3 times fill empty and overwrite all recursively
+[2] - 3 circles with 6 fill empty and overwrite files, do all recursively
 
    afinus = AFI.new
    3.times do
@@ -220,21 +220,12 @@ Default use case is as follows:
 [3] - Edit rewrite for more paranoid clean
 
    def rewrite(file)
-    begin
-     File.write("#{file}", "#{Random.new.bytes(50)}")
-     File.truncate("#{file}", 0)
- # ADD FOR PARANOID
-     File.write("#{file}", "#{Random.new.bytes(20)}")
-     File.write("#{file}", "#{Random.new.bytes(30)}")
-     File.truncate("#{file}", 0)
- # END PARANOID ADD
-     @c_file += 1
-     print_lines("#{@c_file}".yellow, "#{file}".white, "Overwritten and Nulled!\n".yellow)
-    rescue
-     @c_err += 1
-     print_lines("#{@c_err}".red, "#{file}".white.bold, "NOT PROCESSED => PERMISSION PROBLEM?\n".red.bold)
-    end
-   end     # end of rewrite
+    ......
+      File.write("#{file}", "#{Random.new.bytes(20)}")
+      File.write("#{file}", "#{Random.new.bytes(30)}")
+      File.truncate("#{file}", 0)
+    ......
+   end
 
 ```
 
@@ -258,15 +249,17 @@ make it in new small blocks, so it can be used in shell or GEM (don't forget com
 At the end, write test and submit pull request.
 
 Documentation is coming...
-
+  
 If you want to support the project, share the link:  
+  
 Instagram: @cybersecrs  
-www.cybersecrs.github.io/afinus  
+www.github.com/cybersecrs/afinus  
 
 ---
 
 ## Read the License
 
-*AFINUS* can be used, edited and/or sold as long as you keep it Open-Source!  
+*To use AFINUS in Albania you must pay for the license key*  
+Otherwise, *AFINUS* can be used, edited and/or sold as long as you keep it Open-Source & give credits!  
 Author is NOT responsible for any damage caused by this script!  
 For more info, read the LICENSE file.  
