@@ -10,19 +10,19 @@
 #   ***********************                                                      #
 #                                                                                #
 #  ============================================================================  #
-#      Version: [1.5]   -   https://www.github.com/cybersecrs/afinus             #
+#      Version: [1.5.1]   -   https://www.github.com/cybersecrs/afinus           #
 #  ============================================================================  #
 #                                                                                #
 #       Author: Linuxander                                                       #
 #                                                                                #
-#  Description: Take first argument as start folder, loop inside to overwrite    #
+#  Description: Take argument --dir as start folder, loop inside to overwrite    #
 #               each file multiple times, truncate to zero and delete.           #
-#               If no arguments are given, default is working dir.               #
+#               If no argument --dir are given, default is working dir.          #
 #                                                                                #
 #               + added option to fill empty space with random-byte files        #   
-#               + added option for recursive loop with --rec as argument         #
+#               + added option for recursive loop with --recursive as argument   #
 #               + added color output                                             #
-#               + added option to remove remove file after clean                 #
+#               + added option to  remove file after clean                       #
 #               + added 'remove_directories' after clean                         #
 #                                                                                #
 #         Note: Author is NOT responsible for any damage caused by AFINUS!       #
@@ -48,12 +48,11 @@ Code is designed as typical Ruby code, in small blocks, DRY.
 
 ## How it work?
 
-If you start script without arguments, working directory will be *start-folder*.
-You can also add '--rec' argument for recursive clean, it will clean all *sub-folders.*
-If you use *recursive* and *start-folder* args, '--rec' go second.
+If you start script without --dir (-d) argument, working directory will be *current working directory*.
+You can also add '--recursive (-r)' argument for recursive clean, it will clean all *sub-folders.*
 
 ```ruby
-ruby afinus.rb /home/username --rec
+ruby bin/afinus.rb -d /home/username -r
 ```
 
 *AFINUS* then collect all files and count directories, it will skip files if no write permission.
@@ -62,24 +61,23 @@ Filenames for new files are random INT, and file extension is *.fillfile*.
 This make it easy to fill empty space and remove only those files created by self.
 
 ```ruby
- def clean!(option)
-
-   collect(option).each { |file|
-    unless File.directory?(file)
-      begin
-        rewrite(file) if File.writable?(file)
-      rescue
-        puts " >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
-      end 
-    else
-      @c_dir += 1
-      printer("#{@c_dir}".yellow.bold, "#{file}", "Directory Found!\n".white)
-      Dir.rmdir(file) if Dir.empty?(file)
-      @dirs << "#{file}"
-    end  }
-
-   print "\n [#{@c_dir}] directories counted".white
-
+  def clean!(recursive: false)
+    collect(recursive && :recursive).each do |file|
+      if File.directory?(file)
+        @c_dir += 1
+        printer(@c_dir.to_s.yellow.bold, file, 'Directory Found!'.white)
+        Dir.rmdir(file) if Dir.empty?(file)
+        @dirs << file
+      else
+        begin
+          rewrite(file) if File.writable?(file)
+        rescue
+          puts '>> FOLDER DO NOT EXIST OR PERMISSION DENIED <<'.red.bold
+        end
+      end
+ 
+      puts "\n[#{@c_dir}] directories counted".white
+    end
   end
 ```
 
@@ -87,45 +85,26 @@ You must have permission for *start-folder*, or Afinus will exit.
 Method 'execute!' is outside of other definitions, edit for your own use case if you use it as a gem.
 Default use case is as follows:
 
- 1. Enter start-folder *(working-dir)*  
+ 1. Enter start-folder  
  2. Fill empty space with random bytes (512000)  
  3. Overwrite with 50 rand bytes, then 0, then 100, again 0, 50 rand bytes, 0, remove file.  
- 4. Countinue recursive if started with *--rec*
+ 4. Countinue recursive if started with *recursive*
  5. Delete all directories at the end
 
 ```ruby
 
-# 'AFI.execute!' - define start-folder and reursive option 
+# 'AFI.execute!' - define start-folder and recursive option 
 
-
-  def execute!(directory, opt)
-
-  def execute!(directory, opt)
-
-  @start_time = Time.now
-
-    ARGV[1] = "--rec" if opt == "--rec"
-
-    if ARGV.empty? or ARGV[0] == "--rec"
-      directory = Dir.pwd
-    else
-      directory = ARGV[0]
-    end
-
-    if ARGV[0] == "--rec" || ARGV[1] == "--rec"
-      enter(directory)
-      fill_empty_space!(512000)       # Fill empty space before recursive clean!
-      clean!("recursive")
-      remove_directories!("recursive")
-    else
-      enter(directory)
-      fill_empty_space!(512000)
-      clean!("")
-      remove_directories!("")
-    end
-
-  @end_time = Time.now
-
+  def execute!(directory, opts = {})
+    recursive   = opts[:recursive].is_a?(TrueClass)
+    @start_time = Time.now
+    enter(directory)
+    fill_empty_space!(512_000) # Fill empty space before recursive clean!
+    clean!(recursive: recursive)
+    remove_directories!(recursive: recursive)
+  
+    @end_time = Time.now
+  
     print_info
     print_thank_you
   end
@@ -135,13 +114,11 @@ Default use case is as follows:
 
 ```ruby
   def initialize
-
     @c_file     =     File counter
     @c_dir      =     Directory counter
     @c_err      =     Error counter
     @c_byte     =     New File counter
     @dirs       =     Array of counted directories
-
   end
 ```
 
@@ -151,22 +128,23 @@ Default use case is as follows:
 
 **Work with script**
 
-```ruby
-`  ruby afinus.rb  `                      -  Clean working directory
-`  ruby afinus.rb --rec  `                -  Clean recursively from working dir
-`  ruby afinus.rb /home/username  `       -  Clean files in /home/username directory
-`  ruby afinus.rb /home/username --rec  ` -  Clean files recursively from /home/username directory
+```
+ruby bin/afinus.rb -h                        #  Show help
+ruby bin/afinus.rb`                          #  Clean working directory
+ruby bin/afinus.rb --recursive`              #  Clean recursively from working dir
+ruby bin/afinus.rb -d /home/username`        #  Clean files in /home/username directory
+ruby bin/afinus.rb --dir /home/username -r   #  Clean files recursively from /home/username directory
 ```
 
 **Use it as a GEM**
 
 ```ruby
-`  AFI.new.enter("/root")  `              -  Enter directory (start-folder)
-`  AFI.new.fill_empty_space!(512000)  `   -  Fill empty partition space with 512K random-byte-files
-`  AFI.new.clean!("fill_empty")  `        -  Clean newly created random-byte-files
-`  AFI.new.clean!("")  `                  -  Clean all files in folder
-`  AFI.new.clean!("recursive")  `         -  Clean working folder recursively
-`  AFI.new.execute!("/root", "--rec")  `  -  Enter root, fill empty space, then clean recursively
+AFI.new.enter('/root')                       #  Enter directory (start-folder)
+AFI.new.fill_empty_space!(512000)            #  Fill empty partition space with 512K random-byte-files
+AFI.new.clean!(:fill_empty)                  #  Clean newly created random-byte-files
+AFI.new.clean!                               #  Clean all files in folder
+AFI.new.clean!('recursive')                  #  Clean working folder recursively
+AFI.new.execute!('/root', recursive: true)   #  Enter root, fill empty space, then clean recursively
 ```
 ---
 
@@ -178,9 +156,9 @@ Default use case is as follows:
  require 'afinus'
 
    afinus = AFI.new
-   afinus.enter("/home/linuxander")
+   afinus.enter('/home/linuxander')
    afinus.fill_empty_space!(512000)
-   afinus.clean!("fill_empty")
+   afinus.clean!('fill_empty') # or afinus.clean!(:fill_empty)
 ```
 
 **Clean partition empty space and all files in folder**
@@ -189,42 +167,42 @@ Default use case is as follows:
  require 'afinus'
 
    afinus = AFI.new
-   afinus.enter("/home/linuxander")
+   afinus.enter('/home/linuxander')
    afinus.fill_empty!(512000)
-   afinus.clean!("")
+   afinus.clean!
 
- [same as]:
+ #[same as]:
 
-   AFI.new.execute!("/home/linuxander", "")
+   AFI.new.execute!('/home/linuxander')
 ```
 
 **Combine methods for more paranoid clean, or edit 'rewrite(file)' as u need it**
 
 ```ruby
-[1] - fill empty and overwrite folder files with 3 more circles
+#[1] - fill empty and overwrite folder files with 3 more circles
 
    afinus = AFI.new
-   afinus.enter("/home/linuxander")
+   afinus.enter('/home/linuxander')
    afinus.fill_empty_space!(512000)
-   3.times do afinus.clean!("") end
+   3.times { afinus.clean! }
 
 
-[2] - 3 circles with 6 fill empty and overwrite files, do all recursively
+#[2] - 3 circles with 6 fill empty and overwrite files, do all recursively
 
    afinus = AFI.new
    3.times do
-     afinus.execute!("/home/linuxander", "recursive")
+     afinus.execute!('/home/linuxander', recursive: true)
    end
 
 
-[3] - Edit rewrite for more paranoid clean
+#[3] - Use truncate_file for clearing file, bytes_array declare how many times file will be truncated
 
-   def rewrite(file)
-    ......
-      File.write("#{file}", "#{Random.new.bytes(20)}")
-      File.write("#{file}", "#{Random.new.bytes(30)}")
-      File.truncate("#{file}", 0)
-    ......
+   def truncate_file(file, bytes_array = [50, 100, 50])
+     bytes_array = Array(bytes_array)
+     bytes_array.each do |bytes|
+       File.write(file, Random.new.bytes(bytes).to_s)
+       File.truncate(file, 0)
+     end
    end
 
 ```
