@@ -15,7 +15,7 @@ class AFI
   end
 
   def execute!(directory, opts = {})
-    recursive = opts[:recursive].is_a?(TrueClass)
+    recursive   = opts[:recursive].is_a?(TrueClass)
     @start_time = Time.now
     enter(directory)
     fill_empty_space!(512_000) # Fill empty space before recursive clean!
@@ -36,6 +36,7 @@ class AFI
     puts "\n >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
     exit(1)
   end
+
   # end of enter(dir)
 
   # Fill empty space on partition
@@ -47,6 +48,7 @@ class AFI
     puts "\n[#{@c_byte}] files created in [#{(@end_time - @start_time).round(3)}] seconds".white
     print_delimiter
   end
+
   # end of fill_empty_space!
 
   # Clean all files!
@@ -68,12 +70,13 @@ class AFI
       puts "\n[#{@c_dir}] directories counted".white
     end
   end
+
   # end of clean!
 
   # Remove Directories
   def remove_directories!(recursive: false)
     collect(recursive && :recursive).select { |file| File.directory?(file) }
-                                    .each { |dir| Dir.rmdir(dir) }
+      .each { |dir| Dir.rmdir(dir) }
   end
 
   # Overwrite and Null file
@@ -86,6 +89,7 @@ class AFI
     @c_err += 1
     printer(@c_err.to_s.red, file.white.bold, 'NOT PROCESSED => PERMISSION PROBLEM?'.red.bold)
   end
+
   # end of rewrite
 
   def truncate_file(file, bytes_array = [50, 100, 50])
@@ -128,23 +132,25 @@ class AFI
   # Create random-byte file
   def create_random_files(bytes)
     loop do
-      a_rand = "#{rand(MAX_RANDOM_NUMBER)}.fillfile"
+      a_rand  = "#{rand(MAX_RANDOM_NUMBER)}.fillfile"
       @c_byte += 1
       File.write(a_rand.to_s, Random.new.bytes(bytes).to_s)
       printer(@c_byte.to_s.yellow.bold, "Created #{a_rand}".white, "#{bytes} bytes\n".white)
     end
   end
+
   # end of create_random_bytes
 
   # Collect files to clean
   def collect(mode = nil)
-    case mode
+    # binding.pry
+    case mode.to_sym
     when :recursive
       Dir.glob(File.join('**', '*'))
     when :fill_empty
       Dir.glob('*.fillfile')
     else
-      Dir.glob('*')
+      Dir.glob('*').select { |file| File.file?(file) }
     end
   end
   # end of collect
