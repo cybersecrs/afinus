@@ -11,4 +11,22 @@ Gem::Specification.new do |s|
   DESC
   s.authors = ['<name>']
   s.files   = ['lib/afinus.rb']
+  s.homepage = 'https://github.com/cybersecrs/afinus'
+  s.license = 'GPL-3.0-only'
+
+  s.metadata['homepage_uri'] = 'https://github.com/cybersecrs/afinus'
+  s.metadata['source_code_uri'] = 'https://github.com/cybersecrs/afinus'
+  s.metadata['bug_tracker_uri'] = 'https://github.com/cybersecrs/afinus/issues'
+
+  s.files = ['bin/afinus', 'lib/afinus.rb', 'LICENSE', 'README.md', 'afinus.gemspec']
+  s.bindir = 'bin'
+  s.executables = ['afinus']
+  s.require_paths = ['lib']
+
+  s.add_runtime_dependency 'colorize'
+  s.add_runtime_dependency 'optimist'
+  s.add_runtime_dependency 'pry'
+
+  s.add_development_dependency 'bundler'
+  s.add_development_dependency 'rake'
 end
