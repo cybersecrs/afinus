@@ -6,8 +6,13 @@ require 'optimist'
 require 'pry'
 
   opts = Optimist.options do
-    opt :recursive, 'Clean directories recursively'
-    opt :dir, 'Working directory', default: Dir.pwd, type: :string
+    opt :recursive, "Clean directories recursively"
+    opt :empty,     "Fill empty space"
+    opt :dir,       "Working directory",    default: Dir.pwd, type: :string
+    opt :files,     "Don't wipe files",     default: false
+    opt :dirs,      "Don't remove folders", default: false
   end
 
-  AFI.new.execute!(opts.dir, recursive: opts.recursive)
+  afinus = AFINUS::Wipe.new
+  afinus.execute(opts.dir, recursive: opts.recursive, empty: opts.empty,
+                               files: opts.files,      dirs: opts.dirs )
