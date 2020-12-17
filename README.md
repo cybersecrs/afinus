@@ -22,12 +22,12 @@ Execute from afinus root directory:
 
 #  OPTIONS:
 
-  -r, --recursive  -  Clean directories recursively
-  -e, --empty      -  Fill empty space
-  -d, --dir=<DIR>  -  Working directory (default: working dir)
-  -f, --files      -  Don't wipe files
-  -i, --dirs       -  Don't remove folders
-  -h, --help       -  Show this message
+  --recursive,  -r  -  Clean directories recursively
+  --empty,      -e  -  Fill empty space
+  --dir=<DIR>,  -d  -  Working directory (default: working dir)
+  --files           -  Don't wipe files
+  --dirs            -  Don't remove folders
+  --help,       -h  -  Show help message
 ```
 
 To use as a Gem in your projects:
@@ -35,8 +35,8 @@ To use as a Gem in your projects:
 ```ruby
   afinus = AFINUS::Wipe.new
 
-  afinus.enter("/root")                      -  Enter directory *(start-folder)*
-  afinus.fill_empty_space! bytes             -  Fill empty partition space with *random-byte-files*, (default: 512K )
+  afinus.enter("/root")                      -  Enter directory
+  afinus.fill_empty_space! bytes             -  Fill empty partition space with random-byte-files, (default: 512K )
   afinus.clean(recursive:false)              -  Clean all files, recursively or not
   afinus.remove_directories(recursive:false) -  Remove all directories, recursively or not
 
