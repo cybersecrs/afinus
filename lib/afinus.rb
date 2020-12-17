@@ -3,9 +3,10 @@
 
 require 'colorize'
 
-class AFI
-  MAX_RANDOM_NUMBER = 99_999_999_999_999_999
-  # Start counters
+module AFINUS
+
+ class Wipe
+
   def initialize
     @c_file = 0
     @c_dir  = 0
@@ -14,45 +15,38 @@ class AFI
     @dirs   = []
   end
 
-  def execute!(directory, opts = {})
-    recursive   = opts[:recursive].is_a?(TrueClass)
-    @start_time = Time.now
+  def execute(directory, opts = {})
     enter(directory)
-    fill_empty_space!(512_000) # Fill empty space before recursive clean!
-    clean!(recursive: recursive)
-    remove_directories!(recursive: recursive)
-
+    @start_time = Time.now
+    recursive = opts[:recursive].is_a?(TrueClass)
+    fill_empty_space! if opts[:empty].is_a?(TrueClass)
+    clean(recursive: recursive) unless opts[:files].is_a?(TrueClass)
+    remove_directories(recursive: recursive) unless opts[:dirs].is_a?(TrueClass)
     @end_time = Time.now
-
-    print_info
-    print_thank_you
+    print_info!
   end
 
   # Enter start directory or exit
   def enter(dir)
     Dir.chdir(dir)
     print_working_dir
-  rescue
+   rescue
     puts "\n >> FOLDER DO NOT EXIST OR PERMISSION DENIED <<\n".red.bold
     exit(1)
   end
 
-  # end of enter(dir)
-
   # Fill empty space on partition
-  def fill_empty_space!(bytes)
+  def fill_empty_space! bytes = 512000
     @start_time = Time.now
     create_random_files(bytes)
-  rescue
+   rescue
     @end_time = Time.now
     puts "\n[#{@c_byte}] files created in [#{(@end_time - @start_time).round(3)}] seconds".white
     print_delimiter
   end
 
-  # end of fill_empty_space!
-
   # Clean all files!
-  def clean!(recursive: false)
+  def clean(recursive: false)
     collect(recursive && :recursive).each do |file|
       if File.directory?(file)
         @c_dir += 1
@@ -69,12 +63,10 @@ class AFI
 
       puts "\n[#{@c_dir}] directories counted".white
     end
-  end
-
-  # end of clean!
+  end   # end of clean!
 
   # Remove Directories
-  def remove_directories!(recursive: false)
+  def remove_directories(recursive: false)
     collect(recursive && :recursive).select { |file| File.directory?(file) }
       .each { |dir| Dir.rmdir(dir) }
   end
@@ -90,27 +82,24 @@ class AFI
     printer(@c_err.to_s.red, file.white.bold, 'NOT PROCESSED => PERMISSION PROBLEM?'.red.bold)
   end
 
-  # end of rewrite
 
-  def truncate_file(file, bytes_array = [50, 100, 50])
-    bytes_array = Array(bytes_array)
-    bytes_array.each do |bytes|
-      File.write(file, Random.new.bytes(bytes).to_s)
-      File.truncate(file, 0)
+  def truncate_file(file, byte = 512000, times = 3)
+    bytes_array = Array([rand(byte), rand(byte), rand(byte)])
+    times.times do 
+      bytes_array.each do |bytes|
+        File.write(file, Random.new.bytes(bytes).to_s)
+        File.truncate(file, 0)
+      end 
     end
   end
+
 
   private
 
   # Print file counter and time info
-  def print_info
+  def print_info!
     puts "[#{@c_file}] files cleaned in [#{(@end_time - @start_time).round(3)}] seconds".white
     print_delimiter
-  end
-
-  # Print "thank you" note
-  def print_thank_you
-    puts "Thank's for using AFI Null Script! Stay with TAILS to protect your privacy!".yellow.bold
   end
 
   # Print working directory
@@ -132,26 +121,25 @@ class AFI
   # Create random-byte file
   def create_random_files(bytes)
     loop do
-      a_rand  = "#{rand(MAX_RANDOM_NUMBER)}.fillfile"
+      a_rand  = "#{rand(99_999_999_999_999_999)}.afinus"
       @c_byte += 1
       File.write(a_rand.to_s, Random.new.bytes(bytes).to_s)
       printer(@c_byte.to_s.yellow.bold, "Created #{a_rand}".white, "#{bytes} bytes\n".white)
     end
   end
 
-  # end of create_random_bytes
-
   # Collect files to clean
   def collect(mode = nil)
     # binding.pry
-    case mode.to_sym
+    case mode.to_s
     when :recursive
       Dir.glob(File.join('**', '*'))
-    when :fill_empty
-      Dir.glob('*.fillfile')
+    when :random
+      Dir.glob('*.afinus')
     else
       Dir.glob('*').select { |file| File.file?(file) }
     end
   end
-  # end of collect
+
+ end
 end

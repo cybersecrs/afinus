@@ -2,12 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name        = 'afinus'
-  s.version     = '1.5.1'
+  s.version     = '1.6.0'
   s.summary     = 'Anti-Forensic-Investigation Null Script'
   s.description = <<~DESC
     AFINUS is ruby gem to destroy data and clean device.
-    This is useful if you want to sell your computer, but you want to be sure that buyer can't recover your files.
-    This simple script can make all your files non-recoverable even for experts, but if you work with high-sensitive data, you can also fill HD with random bytes (default 512kb).
+    All your files will be non-recoverable even for experts, but if you work with high-sensitive data, you can also fill HD with random bytes (default 512kb).
   DESC
   s.authors = ['Linuxander']
   s.files   = ['lib/afinus.rb']
