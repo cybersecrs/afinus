@@ -1,3 +1,7 @@
+**One-Click-Wipe, Windows Directory Cleaner =>** [WinWiper](https://github.com/cybersecrs/winwiper), built with *OCRA* and *AFINUS.*
+
+---
+
 Afinus is updated to 1.6, after I finally found some time for myself, I was too busy in last month. I'll continue on developing this gem to add log-parser and sftp/scp backup. Thank's all who (and who will be) contribute to this project. 
 
 ## How it work?
